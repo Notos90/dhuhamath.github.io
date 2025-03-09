@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Fun Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .game-container {
+            text-align: center;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        #problem {
+            font-size: 24px;
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #num1-line, #num2-line {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            width: 100px;
+            min-height: 24px;
+        }
+        #num1, #num2 {
+            min-width: 20px;
+            display: inline-block;
+            text-align: right;
+        }
+        #operator {
+            margin-right: 10px;
+            min-width: 20px;
+            display: inline-block;
+        }
+        #clue1, #clue2 {
+            font-size: 16px; /* Smaller than main numbers */
+            color: red;
+            margin-left: 5px;
+            display: inline-block;
+        }
+        #apple-guide {
+            font-size: 20px;
+            margin-top: 10px;
+            display: none; /* Hidden by default, shown in subtraction mode */
+        }
+        #apple-instruction {
+            font-size: 16px;
+            color: blue;
+            margin-bottom: 5px;
+        }
+        #apple-label {
+            font-size: 16px;
+            color: red;
+            margin-top: 5px;
+        }
+        #apples-container {
+            margin: 5px 0;
+        }
+        .apple {
+            cursor: pointer;
+            margin: 0 2px;
+            font-size: 24px;
+        }
+        .apple.bitten {
+            color: green;
+        }
+        #line {
+            border-top: 2px solid black;
+            width: 100px;
+            margin: 10px 0;
+        }
+        #answer-container {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+        #equals {
+            font-size: 24px;
+            margin-right: 5px;
+        }
+        #answer {
+            font-size: 20px;
+            padding: 5px;
+            width: 80px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            display: none; /* Hidden until all apples are clicked */
+        }
+        button {
+            font-size: 18px;
+            padding: 10px 20px;
+            margin: 5px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #feedback {
+            font-size: 20px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+        #mode-buttons {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Math Fun Game</h1>
+        <div id="mode-buttons">
+            <button onclick="setMode('addition')">Addition</button>
+            <button onclick="setMode('subtraction')">Subtraction</button>
+        </div>
+        <div id="problem">
+            <div id="num1-line">
+                <span id="num1">0</span>
+                <span id="clue1"></span>
+            </div>
+            <div id="num2-line">
+                <span id="operator">+</span>
+                <span id="num2">0</span>
+                <span id="clue2"></span>
+            </div>
+            <div id="line"></div>
+            <div id="apple-guide">
+                <div id="apple-instruction">Click red apple to subtract</div>
+                <div id="apples-container"></div>
+                <div id="apple-label">Total Red Apples</div>
+            </div>
+            <div id="answer-container">
+                <span id="equals">=</span>
+                <input type="number" id="answer" placeholder="Your answer">
+            </div>
+        </div>
+        <button onclick="checkAnswer()">Submit</button>
+        <p id="feedback"></p>
+        <button onclick="newProblem()">New Problem</button>
+        <p>Score: <span id="score">0</span></p>
+    </div>
+
+    <script>
+        let score = 0;
+        let num1, num2, correctAnswer;
+        let questionAnsweredCorrectly = false;
+        let currentMode = 'addition'; // Default mode is addition
+        let applesClicked = 0;
+
+        function setMode(mode) {
+            currentMode = mode;
+            newProblem(); // Generate a new problem based on the selected mode
+            applesClicked = 0; // Reset clicked apples when switching modes
+        }
+
+        function generateProblem() {
+            const appleGuide = document.getElementById('apple-guide');
+            const applesContainer = document.getElementById('apples-container');
+            const answerInput = document.getElementById('answer');
+
+            if (currentMode === 'addition') {
+                // Addition mode (with clues)
+                // Generate num1 between 1 and 9
+                num1 = Math.floor(Math.random() * 9) + 1; // 1 to 9
+                // Generate num2 to ensure sum >= 10
+                const minNum2 = 10 - num1; // Minimum value for num2 to make sum >= 10
+                num2 = minNum2 + Math.floor(Math.random() * (10 - minNum2 + 1)); // num2 >= minNum2, up to 10
+                operator = '+';
+                correctAnswer = num1 + num2;
+
+                // Ensure num1 is the larger number for consistency
+                if (num1 < num2) {
+                    [num1, num2] = [num2, num1];
+                }
+
+                // Update the main problem
+                document.getElementById('num1').textContent = num1;
+                document.getElementById('operator').textContent = operator;
+                document.getElementById('num2').textContent = num2;
+                document.getElementById('answer').value = '';
+                document.getElementById('feedback').textContent = '';
+
+                // Show clues immediately
+                let amountToMakeTen = 10 - num1;
+                let remaining = num2 - amountToMakeTen;
+                document.getElementById('clue1').textContent = `(+${amountToMakeTen})`;
+                document.getElementById('clue2').textContent = `(-${amountToMakeTen})`;
+
+                // Hide apple guide in addition mode
+                appleGuide.style.display = 'none';
+                answerInput.style.display = 'inline-block'; // Always show answer input in addition
+            } else if (currentMode === 'subtraction') {
+                // Subtraction mode (with clickable apple guide)
+                // Generate num1 between 10 and 20
+                num1 = Math.floor(Math.random() * 11) + 10; // 10 to 20
+                // Generate num2 to ensure num1 - num2 >= 10 and num2 < num1
+                const maxNum2 = num1 - 10; // Maximum value for num2 to keep difference >= 10
+                num2 = Math.floor(Math.random() * maxNum2) + 1; // 1 to maxNum2
+                operator = '-';
+                correctAnswer = num1 - num2;
+
+                // Update the main problem
+                document.getElementById('num1').textContent = num1;
+                document.getElementById('operator').textContent = operator;
+                document.getElementById('num2').textContent = num2;
+                document.getElementById('answer').value = '';
+                document.getElementById('feedback').textContent = '';
+
+                // Hide clues for subtraction
+                document.getElementById('clue1').textContent = '';
+                document.getElementById('clue2').textContent = '';
+
+                // Show apple guide with num1 apples
+                appleGuide.style.display = 'block';
+                applesContainer.innerHTML = ''; // Clear previous apples
+                for (let i = 0; i < num1; i++) {
+                    const apple = document.createElement('span');
+                    apple.className = 'apple';
+                    apple.textContent = '🍎';
+                    apple.onclick = () => subtractApple(apple);
+                    applesContainer.appendChild(apple);
+                }
+                answerInput.style.display = 'none'; // Hide answer input until num2 apples are clicked
+            }
+
+            // Reset the answered status for a new question
+            questionAnsweredCorrectly = false;
+        }
+
+        function subtractApple(apple) {
+            if (!apple.classList.contains('bitten') && applesClicked < num2) {
+                apple.classList.add('bitten');
+                apple.textContent = '🍏';
+                applesClicked++;
+                if (applesClicked === num2) {
+                    document.getElementById('answer').style.display = 'inline-block'; // Show answer input when num2 apples are clicked
+                }
+            }
+        }
+
+        function checkAnswer() {
+            const userAnswer = parseInt(document.getElementById('answer').value);
+            const feedback = document.getElementById('feedback');
+            
+            if (isNaN(userAnswer)) {
+                feedback.textContent = 'Please enter a number!';
+                feedback.style.color = 'red';
+                return;
+            }
+
+            if (userAnswer === correctAnswer) {
+                if (!questionAnsweredCorrectly) {
+                    // Randomly choose between "Awesome Dhuha" and "Good Job Dhuha" only on first correct answer
+                    const positiveFeedback = Math.random() > 0.5 ? 'Awesome Dhuha' : 'Good Job Dhuha';
+                    feedback.textContent = positiveFeedback;
+                    feedback.style.color = 'green';
+                    score++;
+                    questionAnsweredCorrectly = true; // Mark this question as answered correctly
+                } else {
+                    feedback.textContent = 'You already got this one right!';
+                    feedback.style.color = 'green';
+                }
+            } else {
+                feedback.textContent = 'Try again';
+                feedback.style.color = 'red';
+            }
+            document.getElementById('score').textContent = score;
+        }
+
+        function newProblem() {
+            generateProblem();
+            applesClicked = 0; // Reset clicked apples for new problem
+        }
+
+        // Generate the first problem when the page loads (default to addition)
+        generateProblem();
+    </script>
+</body>
+</html>
